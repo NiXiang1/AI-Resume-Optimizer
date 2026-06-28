@@ -296,10 +296,16 @@ supabase/schema.sql
 
 ```bash
 SUPABASE_URL=你的 Supabase Project URL
+SUPABASE_SECRET_KEY=你的 Supabase secret key
+```
+
+如果你的 Supabase 项目仍然使用旧版 API key，也可以配置：
+
+```bash
 SUPABASE_SERVICE_ROLE_KEY=你的 Supabase service_role key
 ```
 
-注意：`SUPABASE_SERVICE_ROLE_KEY` 只能在服务端使用，不要暴露到前端，也不要提交到仓库。
+注意：`SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY` 只能在服务端使用，不要暴露到前端，也不要提交到仓库。
 
 ### 3. 使用历史记录
 

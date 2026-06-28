@@ -69,3 +69,28 @@ export async function listResumeHistory() {
     records: (data || []) as ResumeHistoryRecord[]
   };
 }
+
+export async function deleteResumeHistory(id: string) {
+  const supabase = createSupabaseServerClient();
+
+  if (!supabase) {
+    return {
+      deleted: false,
+      reason: "Supabase 未配置"
+    };
+  }
+
+  const { error } = await supabase.from(historyTable).delete().eq("id", id);
+
+  if (error) {
+    console.error("Failed to delete resume history:", error.message);
+    return {
+      deleted: false,
+      reason: error.message
+    };
+  }
+
+  return {
+    deleted: true
+  };
+}

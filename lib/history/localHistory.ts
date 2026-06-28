@@ -43,3 +43,8 @@ export function getLocalHistory(): ResumeHistoryRecord[] {
 export function clearLocalHistory() {
   localStorage.removeItem(localHistoryKey);
 }
+
+export function deleteLocalHistory(id: string) {
+  const records = getLocalHistory().filter((record) => record.id !== id);
+  localStorage.setItem(localHistoryKey, JSON.stringify(records));
+}

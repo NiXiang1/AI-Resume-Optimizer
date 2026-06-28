@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { clearLocalHistory, getLocalHistory } from "@/lib/history/localHistory";
+import { clearLocalHistory, deleteLocalHistory, getLocalHistory } from "@/lib/history/localHistory";
 import type { ResumeHistoryRecord } from "@/lib/history/types";
 
 type HistoryResponse = {
@@ -15,6 +15,8 @@ export default function HistoryPage() {
   const [history, setHistory] = useState<HistoryResponse | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadHistory() {
@@ -51,8 +53,47 @@ export default function HistoryPage() {
 
   function handleClearLocalHistory() {
     clearLocalHistory();
+    setDeleteError("");
     setHistory((currentHistory) => (currentHistory ? { ...currentHistory, records: [] } : currentHistory));
     setSelectedId(null);
+  }
+
+  async function handleDeleteRecord(record: ResumeHistoryRecord) {
+    const confirmed = window.confirm("确定删除这条历史记录吗？删除后无法恢复。");
+
+    if (!confirmed || deletingId) {
+      return;
+    }
+
+    setDeletingId(record.id);
+    setDeleteError("");
+
+    try {
+      if (history?.configured) {
+        const response = await fetch(`/api/history?id=${encodeURIComponent(record.id)}`, {
+          method: "DELETE"
+        });
+        const data = (await response.json()) as { message?: string };
+
+        if (!response.ok) {
+          throw new Error(data.message || "历史记录删除失败。");
+        }
+      } else {
+        deleteLocalHistory(record.id);
+      }
+
+      const currentRecords = history?.records || [];
+      const currentIndex = currentRecords.findIndex((item) => item.id === record.id);
+      const nextRecords = currentRecords.filter((item) => item.id !== record.id);
+      const nextSelectedRecord = nextRecords[currentIndex] || nextRecords[currentIndex - 1] || nextRecords[0] || null;
+
+      setHistory((currentHistory) => (currentHistory ? { ...currentHistory, records: nextRecords } : currentHistory));
+      setSelectedId(nextSelectedRecord?.id || null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "历史记录删除失败。");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
@@ -81,6 +122,8 @@ export default function HistoryPage() {
       ) : null}
 
       {error ? <Notice title="历史记录读取失败" description={error} tone="error" /> : null}
+
+      {deleteError ? <Notice title="删除失败" description={deleteError} tone="error" /> : null}
 
       {history && !history.configured ? (
         <LocalModeNotice />
@@ -134,7 +177,14 @@ export default function HistoryPage() {
             ))}
           </div>
 
-          {selectedRecord ? <HistoryDetail record={selectedRecord} onOpenResult={openResult} /> : null}
+          {selectedRecord ? (
+            <HistoryDetail
+              record={selectedRecord}
+              deleting={deletingId === selectedRecord.id}
+              onDelete={handleDeleteRecord}
+              onOpenResult={openResult}
+            />
+          ) : null}
         </section>
       ) : null}
     </main>
@@ -163,7 +213,7 @@ function LocalModeNotice() {
         {[
           "在 Supabase 执行 supabase/schema.sql",
           "在 .env.local 添加 SUPABASE_URL",
-          "添加 SUPABASE_SERVICE_ROLE_KEY 后重启项目"
+          "添加 SUPABASE_SECRET_KEY 后重启项目"
         ].map((item) => (
           <div key={item} className="rounded-xl bg-slate-50 p-4 text-sm font-semibold text-ink">
             {item}
@@ -188,10 +238,14 @@ function Notice({ title, description, tone }: { title: string; description: stri
 }
 
 function HistoryDetail({
+  deleting,
   record,
+  onDelete,
   onOpenResult
 }: {
+  deleting: boolean;
   record: ResumeHistoryRecord;
+  onDelete: (record: ResumeHistoryRecord) => void;
   onOpenResult: (record: ResumeHistoryRecord) => void;
 }) {
   return (
@@ -204,13 +258,23 @@ function HistoryDetail({
             <p className="mt-2 text-sm font-semibold text-brand-700">保存位置：浏览器本地</p>
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={() => onOpenResult(record)}
-          className="rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
-        >
-          打开结果页
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => onOpenResult(record)}
+            className="rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+          >
+            打开结果页
+          </button>
+          <button
+            type="button"
+            disabled={deleting}
+            onClick={() => onDelete(record)}
+            className="rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {deleting ? "正在删除..." : "删除记录"}
+          </button>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-3">
