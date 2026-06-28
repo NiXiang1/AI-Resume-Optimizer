@@ -1,0 +1,317 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #162033;
+  background: #f6f8fb;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(38, 117, 255, 0.14), transparent 32rem),
+    linear-gradient(180deg, #f8fbff 0%, #eef3f9 100%);
+  color: #162033;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: #d9edff;
+}
+
+.ai-stepper-shell {
+  --step-green: #34d399;
+  --step-blue: #2563eb;
+  --step-gray: #d1d5db;
+  position: relative;
+}
+
+.ai-stepper-line {
+  position: absolute;
+  top: 20px;
+  left: 10%;
+  right: 10%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--step-gray);
+}
+
+.ai-stepper-progress-line {
+  position: relative;
+  width: var(--step-progress);
+  height: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e 0%, var(--step-green) 55%, #86efac 100%);
+  transition: width 560ms ease-in-out;
+}
+
+.ai-stepper-progress-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 42%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+  animation: ai-stepper-shimmer 1.8s linear infinite;
+}
+
+.ai-stepper-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-stepper-item {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+}
+
+.ai-stepper-node {
+  position: relative;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 2px solid var(--step-gray);
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-weight: 900;
+  transition:
+    background-color 260ms ease,
+    border-color 260ms ease,
+    color 260ms ease,
+    transform 260ms ease,
+    box-shadow 260ms ease;
+}
+
+.ai-stepper-node.is-done {
+  border-color: var(--step-green);
+  background: var(--step-green);
+  color: #ffffff;
+  animation: ai-stepper-complete 320ms ease-out both;
+}
+
+.ai-stepper-node.is-done::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  border: 2px solid rgba(52, 211, 153, 0.34);
+  animation: ai-stepper-done-ring 420ms ease-out both;
+}
+
+.ai-stepper-node.is-current {
+  border-color: var(--step-blue);
+  background: var(--step-blue);
+  color: #ffffff;
+  box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.12);
+  animation: ai-stepper-pulse 1.35s ease-in-out infinite;
+}
+
+.ai-stepper-node.is-error {
+  border-color: #ef4444;
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.1);
+}
+
+.ai-stepper-bolt {
+  display: inline-block;
+  font-size: 18px;
+  line-height: 1;
+  animation: ai-stepper-bolt 1.4s ease-in-out infinite;
+}
+
+.ai-stepper-check,
+.ai-stepper-error-icon {
+  display: inline-block;
+  line-height: 1;
+}
+
+.ai-stepper-copy {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.ai-stepper-title {
+  color: #162033;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.ai-stepper-status {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ai-stepper-status.is-done {
+  background: rgba(52, 211, 153, 0.15);
+  color: #047857;
+}
+
+.ai-stepper-status.is-current {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+}
+
+.ai-stepper-status.is-pending {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.ai-stepper-status.is-error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+@keyframes ai-stepper-shimmer {
+  from {
+    transform: translateX(-120%);
+  }
+
+  to {
+    transform: translateX(260%);
+  }
+}
+
+@keyframes ai-stepper-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes ai-stepper-bolt {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-1px) rotate(14deg);
+  }
+}
+
+@keyframes ai-stepper-complete {
+  0% {
+    transform: scale(0.82);
+  }
+
+  70% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes ai-stepper-done-ring {
+  from {
+    opacity: 0.7;
+    transform: scale(0.7);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.35);
+  }
+}
+
+@media (max-width: 767px) {
+  .ai-stepper-shell {
+    padding-left: 0;
+  }
+
+  .ai-stepper-line {
+    top: 20px;
+    bottom: 20px;
+    left: 20px;
+    right: auto;
+    width: 4px;
+    height: auto;
+  }
+
+  .ai-stepper-progress-line {
+    width: 100%;
+    height: var(--step-progress);
+    transition: height 560ms ease-in-out;
+  }
+
+  .ai-stepper-progress-line::after {
+    width: 100%;
+    height: 42%;
+    animation-name: ai-stepper-shimmer-y;
+  }
+
+  .ai-stepper-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .ai-stepper-item {
+    grid-template-columns: 40px 1fr;
+    justify-items: stretch;
+    align-items: start;
+    gap: 14px;
+  }
+
+  .ai-stepper-copy {
+    margin-top: 1px;
+    text-align: left;
+  }
+}
+
+@keyframes ai-stepper-shimmer-y {
+  from {
+    transform: translateY(-120%);
+  }
+
+  to {
+    transform: translateY(260%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-stepper-progress-line,
+  .ai-stepper-node {
+    transition-duration: 1ms;
+  }
+
+  .ai-stepper-progress-line::after,
+  .ai-stepper-node,
+  .ai-stepper-node::after,
+  .ai-stepper-bolt {
+    animation: none !important;
+  }
+}
