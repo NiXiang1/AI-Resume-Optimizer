@@ -18,7 +18,8 @@ export async function exportResumeDocx(resumeData: ResumeData, fileName = "resum
       joinInfo("GitHub", resumeData.basicInfo?.github || resumeData.basicInfo?.contacts?.github),
       joinInfo("个人网站", resumeData.basicInfo?.website || resumeData.basicInfo?.contacts?.website)
     ]),
-    ...section(
+    ...(isSectionVisible(resumeData, "education")
+      ? section(
       "教育背景",
       (resumeData.education || []).flatMap((item) => [
         [item.dateRange || item.time, item.school, item.major, item.degree].filter(Boolean).join(" | "),
@@ -27,9 +28,11 @@ export async function exportResumeDocx(resumeData: ResumeData, fileName = "resum
         item.courses?.length ? `主修课程：${item.courses.join("、")}` : "",
         item.relatedCourses?.length ? `相关课程：${item.relatedCourses.join("、")}` : ""
       ])
-    ),
-    ...section("专业技能", flattenSkills(resumeData.skills)),
-    ...section(
+        )
+      : []),
+    ...(isSectionVisible(resumeData, "skills") ? section("专业技能", flattenSkills(resumeData.skills)) : []),
+    ...(isSectionVisible(resumeData, "projects")
+      ? section(
       "项目经历",
       (resumeData.projects || []).flatMap((item) => [
         [item.name, item.dateRange || item.time].filter(Boolean).join(" | "),
@@ -41,8 +44,10 @@ export async function exportResumeDocx(resumeData: ResumeData, fileName = "resum
         ...toArray(item.results).map((line) => `项目成果：${line}`),
         item.link ? `项目链接：${item.link}` : ""
       ])
-    ),
-    ...section(
+        )
+      : []),
+    ...(isSectionVisible(resumeData, "work")
+      ? section(
       "实习经历 / 工作经历",
       [...(resumeData.internshipExperience || []), ...(resumeData.workExperience || [])].flatMap((item) => [
         [item.dateRange || item.time, item.company, item.role || item.position].filter(Boolean).join(" | "),
@@ -50,25 +55,31 @@ export async function exportResumeDocx(resumeData: ResumeData, fileName = "resum
         ...toArray(item.contributions).map((line) => `个人贡献：${line}`),
         ...toArray(item.results).map((line) => `量化成果：${line}`)
       ])
-    ),
-    ...section(
+        )
+      : []),
+    ...(isSectionVisible(resumeData, "campus")
+      ? section(
       "校园经历",
       (resumeData.campusExperience || []).flatMap((item) => [
         [item.dateRange || item.time, item.organization, item.role].filter(Boolean).join(" | "),
         ...toArray(item.description),
         ...toArray(item.results).map((line) => `成果：${line}`)
       ])
-    ),
-    ...section("荣誉奖项", normalizeNamedItems(resumeData.awards)),
-    ...section("证书", normalizeNamedItems(resumeData.certificates)),
-    ...section(
+        )
+      : []),
+    ...(isSectionVisible(resumeData, "awards") ? section("荣誉奖项", normalizeNamedItems(resumeData.awards)) : []),
+    ...(isSectionVisible(resumeData, "certificates") ? section("证书", normalizeNamedItems(resumeData.certificates)) : []),
+    ...(isSectionVisible(resumeData, "volunteer")
+      ? section(
       "志愿服务",
       (resumeData.volunteerExperience || []).flatMap((item) => [
         [item.time || item.dateRange, item.name, item.hours].filter(Boolean).join(" | "),
         ...toArray(item.description)
       ])
-    ),
-    ...section("自我评价", toArray(resumeData.selfEvaluation))
+        )
+      : []),
+    ...(isSectionVisible(resumeData, "selfEvaluation") ? section("自我评价", toArray(resumeData.selfEvaluation)) : []),
+    ...(resumeData.customSections || []).flatMap((item) => section(item.title, [item.content || "", ...(item.items || [])]))
   ].filter(Boolean);
 
   const doc = new Document({
@@ -126,6 +137,10 @@ function toArray(value: string[] | string | undefined) {
   }
 
   return Array.isArray(value) ? value : value.split(/\n|；|;/).map((item) => item.trim()).filter(Boolean);
+}
+
+function isSectionVisible(data: ResumeData, key: string) {
+  return !(data.hiddenSections || []).includes(key);
 }
 
 function flattenSkills(skills: ResumeData["skills"]) {

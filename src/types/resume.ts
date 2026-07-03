@@ -12,6 +12,7 @@ export type ResumeData = {
   volunteerExperience?: VolunteerExperienceItem[];
   selfEvaluation?: string[] | string;
   customSections?: CustomSection[];
+  hiddenSections?: string[];
 };
 
 export type BasicInfo = {

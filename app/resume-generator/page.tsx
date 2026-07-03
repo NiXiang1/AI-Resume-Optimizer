@@ -13,6 +13,7 @@ import type {
   AwardItem,
   CampusExperienceItem,
   CertificateItem,
+  CustomSection,
   EducationItem,
   ProjectItem,
   ResumeData,
@@ -21,6 +22,32 @@ import type {
 
 type Mode = "preview" | "edit";
 type TemplateId = "template1" | "template2" | "template3";
+type EditableSectionKey =
+  | "education"
+  | "skills"
+  | "projects"
+  | "work"
+  | "campus"
+  | "awards"
+  | "certificates"
+  | "advantages"
+  | "volunteer"
+  | "selfEvaluation";
+
+const customSectionPresets = ["实践经历", "比赛经历", "科研经历", "社团经历", "培训经历", "语言能力", "作品集"];
+
+const editableSections: { key: EditableSectionKey; title: string }[] = [
+  { key: "education", title: "教育背景" },
+  { key: "skills", title: "专业技能" },
+  { key: "projects", title: "项目经历" },
+  { key: "work", title: "实习经历 / 工作经历" },
+  { key: "campus", title: "校园经历" },
+  { key: "awards", title: "荣誉奖项" },
+  { key: "certificates", title: "证书" },
+  { key: "advantages", title: "个人优势" },
+  { key: "volunteer", title: "志愿服务" },
+  { key: "selfEvaluation", title: "自我评价" }
+];
 
 const templateOptions: { id: TemplateId; name: string; description: string }[] = [
   {
@@ -148,6 +175,9 @@ export default function ResumeGeneratorPage() {
 }
 
 function ResumeEditor({ resumeData, onChange }: { resumeData: ResumeData; onChange: (data: ResumeData) => void }) {
+  const hiddenSections = resumeData.hiddenSections || [];
+  const customSections = resumeData.customSections || [];
+
   function updateBasicInfo(key: string, value: string) {
     onChange({
       ...resumeData,
@@ -172,11 +202,60 @@ function ResumeEditor({ resumeData, onChange }: { resumeData: ResumeData; onChan
     });
   }
 
+  function isVisible(key: EditableSectionKey) {
+    return !hiddenSections.includes(key);
+  }
+
+  function hideSection(key: EditableSectionKey) {
+    if (hiddenSections.includes(key)) {
+      return;
+    }
+
+    onChange({
+      ...resumeData,
+      hiddenSections: [...hiddenSections, key]
+    });
+  }
+
+  function showSection(key: EditableSectionKey) {
+    onChange({
+      ...resumeData,
+      hiddenSections: hiddenSections.filter((item) => item !== key)
+    });
+  }
+
+  function addCustomSection(title: string) {
+    const nextTitle = title || `自定义板块 ${customSections.length + 1}`;
+    onChange({
+      ...resumeData,
+      customSections: [
+        ...customSections,
+        {
+          title: nextTitle,
+          items: []
+        }
+      ]
+    });
+  }
+
+  function updateCustomSection(index: number, patch: Partial<CustomSection>) {
+    const nextSections = [...customSections];
+    nextSections[index] = { ...nextSections[index], ...patch };
+    onChange({ ...resumeData, customSections: nextSections });
+  }
+
+  function deleteCustomSection(index: number) {
+    onChange({
+      ...resumeData,
+      customSections: customSections.filter((_, currentIndex) => currentIndex !== index)
+    });
+  }
+
   return (
     <section className="resume-editor-panel">
       <header className="resume-editor-header">
         <h2>编辑 resume.json</h2>
-        <p>修改后右侧预览会实时更新。数组内容支持新增、删除、上移和下移。</p>
+        <p>修改后右侧预览会实时更新。可以隐藏暂时不用的板块，也可以新增实践经历等自定义板块。</p>
       </header>
 
       <EditorBlock title="基本信息">
@@ -198,26 +277,94 @@ function ResumeEditor({ resumeData, onChange }: { resumeData: ResumeData; onChan
         </div>
       </EditorBlock>
 
-      <EducationEditor resumeData={resumeData} onChange={onChange} />
-      <TextareaBlock title="专业技能" value={flattenSkills(resumeData.skills).join("\n")} onChange={updateSkills} placeholder="每行一个技能" />
-      <ProjectEditor resumeData={resumeData} onChange={onChange} />
-      <WorkEditor resumeData={resumeData} onChange={onChange} />
-      <CampusEditor resumeData={resumeData} onChange={onChange} />
-      <AwardsEditor resumeData={resumeData} onChange={onChange} />
-      <CertificatesEditor resumeData={resumeData} onChange={onChange} />
-      <TextareaBlock title="个人优势" value={(resumeData.advantages || []).join("\n")} onChange={(value) => updateTextList("advantages", value)} placeholder="每行一条个人优势" />
-      <VolunteerEditor resumeData={resumeData} onChange={onChange} />
-      <TextareaBlock title="自我评价" value={toText(resumeData.selfEvaluation)} onChange={(value) => updateTextList("selfEvaluation", value)} placeholder="每行一段自我评价" />
+      <SectionManager hiddenSections={hiddenSections} onAddCustomSection={addCustomSection} onShowSection={showSection} />
+
+      {isVisible("education") ? <EducationEditor resumeData={resumeData} onChange={onChange} onRemove={() => hideSection("education")} /> : null}
+      {isVisible("skills") ? (
+        <TextareaBlock title="专业技能" value={flattenSkills(resumeData.skills).join("\n")} onChange={updateSkills} onRemove={() => hideSection("skills")} placeholder="每行一个技能" />
+      ) : null}
+      {isVisible("projects") ? <ProjectEditor resumeData={resumeData} onChange={onChange} onRemove={() => hideSection("projects")} /> : null}
+      {isVisible("work") ? <WorkEditor resumeData={resumeData} onChange={onChange} onRemove={() => hideSection("work")} /> : null}
+      {isVisible("campus") ? <CampusEditor resumeData={resumeData} onChange={onChange} onRemove={() => hideSection("campus")} /> : null}
+      {isVisible("awards") ? <AwardsEditor resumeData={resumeData} onChange={onChange} onRemove={() => hideSection("awards")} /> : null}
+      {isVisible("certificates") ? <CertificatesEditor resumeData={resumeData} onChange={onChange} onRemove={() => hideSection("certificates")} /> : null}
+      {isVisible("advantages") ? (
+        <TextareaBlock
+          title="个人优势"
+          value={(resumeData.advantages || []).join("\n")}
+          onChange={(value) => updateTextList("advantages", value)}
+          onRemove={() => hideSection("advantages")}
+          placeholder="每行一条个人优势"
+        />
+      ) : null}
+      {isVisible("volunteer") ? <VolunteerEditor resumeData={resumeData} onChange={onChange} onRemove={() => hideSection("volunteer")} /> : null}
+      {isVisible("selfEvaluation") ? (
+        <TextareaBlock
+          title="自我评价"
+          value={toText(resumeData.selfEvaluation)}
+          onChange={(value) => updateTextList("selfEvaluation", value)}
+          onRemove={() => hideSection("selfEvaluation")}
+          placeholder="每行一段自我评价"
+        />
+      ) : null}
+      <CustomSectionsEditor sections={customSections} onChange={updateCustomSection} onDelete={deleteCustomSection} />
     </section>
   );
 }
 
-function EducationEditor({ resumeData, onChange }: EditorProps) {
+function SectionManager({
+  hiddenSections,
+  onAddCustomSection,
+  onShowSection
+}: {
+  hiddenSections: string[];
+  onAddCustomSection: (title: string) => void;
+  onShowSection: (key: EditableSectionKey) => void;
+}) {
+  const [selectedTitle, setSelectedTitle] = useState(customSectionPresets[0]);
+  const hiddenEditableSections = editableSections.filter((section) => hiddenSections.includes(section.key));
+
+  return (
+    <section className="resume-section-manager" aria-label="板块管理">
+      <div>
+        <h3>板块管理</h3>
+        <p>隐藏的板块不会出现在右侧预览和导出的 DOCX 中；需要时可以恢复。</p>
+      </div>
+      <div className="resume-section-manager-actions">
+        <label>
+          <span>新增板块</span>
+          <select value={selectedTitle} onChange={(event) => setSelectedTitle(event.target.value)}>
+            {customSectionPresets.map((title) => (
+              <option value={title} key={title}>
+                {title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="button" onClick={() => onAddCustomSection(selectedTitle)}>
+          新建板块
+        </button>
+      </div>
+      {hiddenEditableSections.length ? (
+        <div className="resume-hidden-section-list">
+          {hiddenEditableSections.map((section) => (
+            <button type="button" key={section.key} onClick={() => onShowSection(section.key)}>
+              恢复{section.title}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function EducationEditor({ resumeData, onChange, onRemove }: EditorProps) {
   const items = resumeData.education || [];
   return (
     <ArrayBlock
       title="教育背景"
       items={items}
+      onRemove={onRemove}
       onAdd={() => onChange({ ...resumeData, education: [...items, { school: "", major: "", degree: "", dateRange: "", courses: [] }] })}
       onMove={(from, to) => onChange({ ...resumeData, education: moveItem(items, from, to) })}
       onDelete={(index) => onChange({ ...resumeData, education: removeItem(items, index) })}
@@ -236,12 +383,13 @@ function EducationEditor({ resumeData, onChange }: EditorProps) {
   );
 }
 
-function ProjectEditor({ resumeData, onChange }: EditorProps) {
+function ProjectEditor({ resumeData, onChange, onRemove }: EditorProps) {
   const items = resumeData.projects || [];
   return (
     <ArrayBlock
       title="项目经历"
       items={items}
+      onRemove={onRemove}
       onAdd={() => onChange({ ...resumeData, projects: [...items, { name: "", dateRange: "", description: [], techStack: [], responsibilities: [], coreFeatures: [], results: [] }] })}
       onMove={(from, to) => onChange({ ...resumeData, projects: moveItem(items, from, to) })}
       onDelete={(index) => onChange({ ...resumeData, projects: removeItem(items, index) })}
@@ -262,12 +410,13 @@ function ProjectEditor({ resumeData, onChange }: EditorProps) {
   );
 }
 
-function WorkEditor({ resumeData, onChange }: EditorProps) {
+function WorkEditor({ resumeData, onChange, onRemove }: EditorProps) {
   const items = resumeData.internshipExperience || [];
   return (
     <ArrayBlock
       title="实习经历 / 工作经历"
       items={items}
+      onRemove={onRemove}
       onAdd={() => onChange({ ...resumeData, internshipExperience: [...items, { company: "", role: "", dateRange: "", description: [], contributions: [], results: [] }] })}
       onMove={(from, to) => onChange({ ...resumeData, internshipExperience: moveItem(items, from, to) })}
       onDelete={(index) => onChange({ ...resumeData, internshipExperience: removeItem(items, index) })}
@@ -285,12 +434,13 @@ function WorkEditor({ resumeData, onChange }: EditorProps) {
   );
 }
 
-function CampusEditor({ resumeData, onChange }: EditorProps) {
+function CampusEditor({ resumeData, onChange, onRemove }: EditorProps) {
   const items = resumeData.campusExperience || [];
   return (
     <ArrayBlock
       title="校园经历"
       items={items}
+      onRemove={onRemove}
       onAdd={() => onChange({ ...resumeData, campusExperience: [...items, { organization: "", role: "", dateRange: "", description: [], results: [] }] })}
       onMove={(from, to) => onChange({ ...resumeData, campusExperience: moveItem(items, from, to) })}
       onDelete={(index) => onChange({ ...resumeData, campusExperience: removeItem(items, index) })}
@@ -307,12 +457,13 @@ function CampusEditor({ resumeData, onChange }: EditorProps) {
   );
 }
 
-function AwardsEditor({ resumeData, onChange }: EditorProps) {
+function AwardsEditor({ resumeData, onChange, onRemove }: EditorProps) {
   const items = normalizeAwards(resumeData.awards);
   return (
     <ArrayBlock
       title="荣誉奖项"
       items={items}
+      onRemove={onRemove}
       onAdd={() => onChange({ ...resumeData, awards: [...items, { name: "", date: "", level: "", description: "" }] })}
       onMove={(from, to) => onChange({ ...resumeData, awards: moveItem(items, from, to) })}
       onDelete={(index) => onChange({ ...resumeData, awards: removeItem(items, index) })}
@@ -328,12 +479,13 @@ function AwardsEditor({ resumeData, onChange }: EditorProps) {
   );
 }
 
-function CertificatesEditor({ resumeData, onChange }: EditorProps) {
+function CertificatesEditor({ resumeData, onChange, onRemove }: EditorProps) {
   const items = normalizeCertificates(resumeData.certificates);
   return (
     <ArrayBlock
       title="证书"
       items={items}
+      onRemove={onRemove}
       onAdd={() => onChange({ ...resumeData, certificates: [...items, { name: "", date: "", description: "" }] })}
       onMove={(from, to) => onChange({ ...resumeData, certificates: moveItem(items, from, to) })}
       onDelete={(index) => onChange({ ...resumeData, certificates: removeItem(items, index) })}
@@ -348,12 +500,13 @@ function CertificatesEditor({ resumeData, onChange }: EditorProps) {
   );
 }
 
-function VolunteerEditor({ resumeData, onChange }: EditorProps) {
+function VolunteerEditor({ resumeData, onChange, onRemove }: EditorProps) {
   const items = resumeData.volunteerExperience || [];
   return (
     <ArrayBlock
       title="志愿服务"
       items={items}
+      onRemove={onRemove}
       onAdd={() => onChange({ ...resumeData, volunteerExperience: [...items, { name: "", dateRange: "", description: [], hours: "" }] })}
       onMove={(from, to) => onChange({ ...resumeData, volunteerExperience: moveItem(items, from, to) })}
       onDelete={(index) => onChange({ ...resumeData, volunteerExperience: removeItem(items, index) })}
@@ -372,12 +525,20 @@ function VolunteerEditor({ resumeData, onChange }: EditorProps) {
 type EditorProps = {
   resumeData: ResumeData;
   onChange: (data: ResumeData) => void;
+  onRemove: () => void;
 };
 
-function EditorBlock({ title, children }: { title: string; children: React.ReactNode }) {
+function EditorBlock({ title, children, onRemove, removeLabel = "隐藏板块" }: { title: string; children: React.ReactNode; onRemove?: () => void; removeLabel?: string }) {
   return (
     <section className="resume-editor-block">
-      <h3>{title}</h3>
+      <div className="resume-editor-block-head">
+        <h3>{title}</h3>
+        {onRemove ? (
+          <button type="button" onClick={onRemove}>
+            {removeLabel}
+          </button>
+        ) : null}
+      </div>
       {children}
     </section>
   );
@@ -389,7 +550,8 @@ function ArrayBlock<T>({
   render,
   onAdd,
   onDelete,
-  onMove
+  onMove,
+  onRemove
 }: {
   title: string;
   items: T[];
@@ -397,9 +559,10 @@ function ArrayBlock<T>({
   onAdd: () => void;
   onDelete: (index: number) => void;
   onMove: (from: number, to: number) => void;
+  onRemove?: () => void;
 }) {
   return (
-    <EditorBlock title={title}>
+    <EditorBlock title={title} onRemove={onRemove}>
       <div className="resume-array-list">
         {items.map((item, index) => (
           <article className="resume-array-item" key={index}>
@@ -426,11 +589,39 @@ function ArrayBlock<T>({
   );
 }
 
-function TextareaBlock({ title, value, onChange, placeholder }: { title: string; value: string; onChange: (value: string) => void; placeholder: string }) {
+function TextareaBlock({ title, value, onChange, onRemove, placeholder }: { title: string; value: string; onChange: (value: string) => void; onRemove?: () => void; placeholder: string }) {
   return (
-    <EditorBlock title={title}>
+    <EditorBlock title={title} onRemove={onRemove}>
       <TextareaField label={title} value={value} onChange={onChange} placeholder={placeholder} />
     </EditorBlock>
+  );
+}
+
+function CustomSectionsEditor({
+  sections,
+  onChange,
+  onDelete
+}: {
+  sections: CustomSection[];
+  onChange: (index: number, patch: Partial<CustomSection>) => void;
+  onDelete: (index: number) => void;
+}) {
+  if (!sections.length) {
+    return null;
+  }
+
+  return (
+    <>
+      {sections.map((section, index) => (
+        <EditorBlock title={section.title || "自定义板块"} key={`${section.title}-${index}`} onRemove={() => onDelete(index)} removeLabel="删除板块">
+          <div className="resume-editor-grid">
+            <Field label="板块名称" value={section.title} onChange={(value) => onChange(index, { title: value })} />
+            <TextareaField label="段落内容" value={section.content || ""} onChange={(value) => onChange(index, { content: value })} placeholder="适合填写一段整体说明，可留空" />
+            <TextareaField label="条目内容" value={(section.items || []).join("\n")} onChange={(value) => onChange(index, { items: linesToArray(value) })} placeholder="每行一条经历或成果" />
+          </div>
+        </EditorBlock>
+      ))}
+    </>
   );
 }
 

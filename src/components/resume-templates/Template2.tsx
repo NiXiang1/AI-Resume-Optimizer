@@ -65,16 +65,16 @@ export default function Template2({ resumeData }: Template2Props) {
         </div>
       </TemplateSection>
 
-      <EducationSection items={resumeData.education || []} />
-      <ExperienceSection title="项目经历" icon="▣" items={resumeData.projects || []} kind="project" />
-      <WorkSection items={internship} />
-      <CampusSection items={resumeData.campusExperience || []} />
-      <SkillsSection groups={skillGroups} />
-      <TagSection title="荣誉奖项" icon="♕" items={awards} />
-      <TagSection title="证书" icon="✓" items={certificates} />
-      <VolunteerSection items={resumeData.volunteerExperience || []} />
+      {isSectionVisible(resumeData, "education") ? <EducationSection items={resumeData.education || []} /> : null}
+      {isSectionVisible(resumeData, "projects") ? <ExperienceSection title="项目经历" icon="▣" items={resumeData.projects || []} kind="project" /> : null}
+      {isSectionVisible(resumeData, "work") ? <WorkSection items={internship} /> : null}
+      {isSectionVisible(resumeData, "campus") ? <CampusSection items={resumeData.campusExperience || []} /> : null}
+      {isSectionVisible(resumeData, "skills") ? <SkillsSection groups={skillGroups} /> : null}
+      {isSectionVisible(resumeData, "awards") ? <TagSection title="荣誉奖项" icon="♕" items={awards} /> : null}
+      {isSectionVisible(resumeData, "certificates") ? <TagSection title="证书" icon="✓" items={certificates} /> : null}
+      {isSectionVisible(resumeData, "volunteer") ? <VolunteerSection items={resumeData.volunteerExperience || []} /> : null}
 
-      {selfEvaluation.length > 0 ? (
+      {isSectionVisible(resumeData, "selfEvaluation") && selfEvaluation.length > 0 ? (
         <TemplateSection title="自我评价" icon="✎">
           <div className="template2-paragraphs">
             {selfEvaluation.map((item) => (
@@ -448,4 +448,8 @@ function getDensity(data: ResumeData) {
   }
 
   return "template2-comfortable";
+}
+
+function isSectionVisible(data: ResumeData, key: string) {
+  return !(data.hiddenSections || []).includes(key);
 }

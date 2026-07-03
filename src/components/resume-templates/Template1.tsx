@@ -57,28 +57,35 @@ export default function Template1({ data }: Template1Props) {
           <InfoList contacts={contacts} />
         </SidebarSection>
 
-        <SidebarSection title={sidebarSections[1].title} icon={sidebarSections[1].icon}>
-          <BulletList items={skills} />
-        </SidebarSection>
+        {isSectionVisible(data, "skills") ? (
+          <SidebarSection title={sidebarSections[1].title} icon={sidebarSections[1].icon}>
+            <BulletList items={skills} />
+          </SidebarSection>
+        ) : null}
 
-        <SidebarSection title={sidebarSections[2].title} icon={sidebarSections[2].icon}>
-          <BulletList items={advantages} />
-        </SidebarSection>
+        {isSectionVisible(data, "advantages") ? (
+          <SidebarSection title={sidebarSections[2].title} icon={sidebarSections[2].icon}>
+            <BulletList items={advantages} />
+          </SidebarSection>
+        ) : null}
 
-        <SidebarSection title={sidebarSections[3].title} icon={sidebarSections[3].icon}>
-          <ul className="template1-list">
-            {volunteerExperience.map((item) => (
-              <li key={item.name || item.description?.toString()}>
-                {item.name}
-                {item.hours ? <strong>{item.hours}</strong> : null}
-              </li>
-            ))}
-          </ul>
-        </SidebarSection>
+        {isSectionVisible(data, "volunteer") ? (
+          <SidebarSection title={sidebarSections[3].title} icon={sidebarSections[3].icon}>
+            <ul className="template1-list">
+              {volunteerExperience.map((item) => (
+                <li key={item.name || item.description?.toString()}>
+                  {item.name}
+                  {item.hours ? <strong>{item.hours}</strong> : null}
+                </li>
+              ))}
+            </ul>
+          </SidebarSection>
+        ) : null}
       </aside>
 
       <main className="template1-main">
-        <MainSection title="教育背景" icon="🎓">
+        {isSectionVisible(data, "education") ? (
+          <MainSection title="教育背景" icon="🎓">
           {education.map((item) => (
             <div className="template1-education" key={`${item.school}-${item.major}`}>
               <div className="template1-education-top">
@@ -96,49 +103,69 @@ export default function Template1({ data }: Template1Props) {
               </p>
             </div>
           ))}
-        </MainSection>
+          </MainSection>
+        ) : null}
 
-        <MainSection title="荣誉奖项" icon="🏆">
-          <div className="template1-awards">
-            {awards.map((award) => (
-              <div className="template1-award" key={award}>
-                <span aria-hidden="true">〔</span>
-                <strong>{award}</strong>
-                <span aria-hidden="true">〕</span>
-              </div>
-            ))}
-          </div>
-        </MainSection>
-
-        <MainSection title="项目经历" icon="💼">
-          <div className="template1-stack">
-            {projects.map((project) => (
-              <ProjectItem project={project} key={`${project.name}-${project.dateRange || project.time}`} />
-            ))}
-          </div>
-        </MainSection>
-
-        <MainSection title="校园经历" icon="👥">
-          <div className="template1-stack">
-            {campusExperience.map((item) => (
-              <div className="template1-experience" key={`${item.role}-${item.dateRange || item.time}`}>
-                <div className="template1-bar">
-                  <strong>{item.role}</strong>
-                  <span>{item.dateRange || item.time}</span>
+        {isSectionVisible(data, "awards") ? (
+          <MainSection title="荣誉奖项" icon="🏆">
+            <div className="template1-awards">
+              {awards.map((award) => (
+                <div className="template1-award" key={award}>
+                  <span aria-hidden="true">〔</span>
+                  <strong>{award}</strong>
+                  <span aria-hidden="true">〕</span>
                 </div>
-                <BulletList items={normalizeTextList(item.description)} />
-              </div>
-            ))}
-          </div>
-        </MainSection>
+              ))}
+            </div>
+          </MainSection>
+        ) : null}
 
-        <MainSection title="自我评价" icon="▣">
-          <div className="template1-evaluation">
-            {selfEvaluation.map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
-            ))}
-          </div>
-        </MainSection>
+        {isSectionVisible(data, "projects") ? (
+          <MainSection title="项目经历" icon="💼">
+            <div className="template1-stack">
+              {projects.map((project) => (
+                <ProjectItem project={project} key={`${project.name}-${project.dateRange || project.time}`} />
+              ))}
+            </div>
+          </MainSection>
+        ) : null}
+
+        {isSectionVisible(data, "campus") ? (
+          <MainSection title="校园经历" icon="👥">
+            <div className="template1-stack">
+              {campusExperience.map((item) => (
+                <div className="template1-experience" key={`${item.role}-${item.dateRange || item.time}`}>
+                  <div className="template1-bar">
+                    <strong>{item.role}</strong>
+                    <span>{item.dateRange || item.time}</span>
+                  </div>
+                  <BulletList items={normalizeTextList(item.description)} />
+                </div>
+              ))}
+            </div>
+          </MainSection>
+        ) : null}
+
+        {isSectionVisible(data, "selfEvaluation") ? (
+          <MainSection title="自我评价" icon="▣">
+            <div className="template1-evaluation">
+              {selfEvaluation.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
+          </MainSection>
+        ) : null}
+
+        {(data.customSections || []).map((section) =>
+          section.content || section.items?.length ? (
+            <MainSection key={section.title} title={section.title} icon="•">
+              <div className="template1-evaluation">
+                {section.content ? <p>{section.content}</p> : null}
+                <BulletList items={section.items || []} />
+              </div>
+            </MainSection>
+          ) : null
+        )}
 
         <footer className="template1-quote">脚踏实地 · 勤学善思 · 知行合一 · 追求卓越</footer>
       </main>
@@ -288,4 +315,8 @@ function flattenSkills(skills: ResumeData["skills"]) {
     const items = Array.isArray(value) ? value : [value];
     return items.map((item) => `${category}：${item}`);
   });
+}
+
+function isSectionVisible(data: ResumeData, key: string) {
+  return !(data.hiddenSections || []).includes(key);
 }

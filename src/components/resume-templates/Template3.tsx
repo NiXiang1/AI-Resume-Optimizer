@@ -66,7 +66,7 @@ export default function Template3({ resumeData }: Template3Props) {
           </>
         ) : null}
 
-        {education.length > 0 ? (
+        {isSectionVisible(resumeData, "education") && education.length > 0 ? (
           <>
             <Divider />
             <SidebarSection title="教育背景">
@@ -83,13 +83,13 @@ export default function Template3({ resumeData }: Template3Props) {
           </>
         ) : null}
 
-        <SidebarList title="专业技能" items={skills} />
-        <SidebarList title="证书" items={certificates} />
-        <SidebarList title="个人优势" items={softSkills} />
+        {isSectionVisible(resumeData, "skills") ? <SidebarList title="专业技能" items={skills} /> : null}
+        {isSectionVisible(resumeData, "certificates") ? <SidebarList title="证书" items={certificates} /> : null}
+        {isSectionVisible(resumeData, "advantages") ? <SidebarList title="个人优势" items={softSkills} /> : null}
       </aside>
 
       <main className="template3-content">
-        {profile.length > 0 ? (
+        {isSectionVisible(resumeData, "selfEvaluation") && profile.length > 0 ? (
           <MainSection title="自我评价" className="template3-profile">
             {profile.map((paragraph) => (
               <p key={paragraph}>{paragraph}</p>
@@ -105,7 +105,7 @@ export default function Template3({ resumeData }: Template3Props) {
           </MainSection>
         ) : null}
 
-        {resumeData.awards?.length ? (
+        {isSectionVisible(resumeData, "awards") && resumeData.awards?.length ? (
           <MainSection title="荣誉奖项">
             <div className="template3-tags">
               {normalizeAwards(resumeData.awards).map((award) => (
@@ -114,6 +114,21 @@ export default function Template3({ resumeData }: Template3Props) {
             </div>
           </MainSection>
         ) : null}
+
+        {(resumeData.customSections || []).map((section) =>
+          section.content || section.items?.length ? (
+            <MainSection title={section.title} key={section.title}>
+              {section.content ? <p>{section.content}</p> : null}
+              {section.items?.length ? (
+                <ul>
+                  {section.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </MainSection>
+          ) : null
+        )}
       </main>
     </article>
   );
@@ -204,7 +219,8 @@ function ExperienceItem({ item }: { item: ExperienceData }) {
 }
 
 function buildExperienceItems(data: ResumeData): ExperienceData[] {
-  const work = [...(data.workExperience || []), ...(data.internshipExperience || [])].map((item) => ({
+  const work = isSectionVisible(data, "work")
+    ? [...(data.workExperience || []), ...(data.internshipExperience || [])].map((item) => ({
     organization: item.company,
     title: item.role || item.position,
     dateRange: item.dateRange || item.time,
@@ -214,9 +230,11 @@ function buildExperienceItems(data: ResumeData): ExperienceData[] {
       ...toBullets(normalizeTextList(item.contributions)),
       ...toBullets(normalizeTextList(item.results))
     ]
-  }));
+      }))
+    : [];
 
-  const projects = (data.projects || []).map((item) => ({
+  const projects = isSectionVisible(data, "projects")
+    ? (data.projects || []).map((item) => ({
     organization: item.name,
     title: item.summary || "项目经历",
     dateRange: item.dateRange || item.time,
@@ -228,22 +246,27 @@ function buildExperienceItems(data: ResumeData): ExperienceData[] {
       ...toBullets(normalizeTextList(item.results)),
       ...(item.link ? [{ text: `项目链接：${item.link}` }] : [])
     ]
-  }));
+      }))
+    : [];
 
-  const campus = (data.campusExperience || []).map((item) => ({
+  const campus = isSectionVisible(data, "campus")
+    ? (data.campusExperience || []).map((item) => ({
     organization: item.organization,
     title: item.role,
     dateRange: item.dateRange || item.time,
     bullets: [...toBullets(normalizeTextList(item.description)), ...toBullets(normalizeTextList(item.results))]
-  }));
+      }))
+    : [];
 
-  const volunteer = (data.volunteerExperience || []).map((item) => ({
+  const volunteer = isSectionVisible(data, "volunteer")
+    ? (data.volunteerExperience || []).map((item) => ({
     organization: item.name,
     title: "志愿服务",
     dateRange: item.dateRange || item.time,
     subtitle: item.hours ? `服务时长：${item.hours}` : undefined,
     bullets: toBullets(normalizeTextList(item.description))
-  }));
+      }))
+    : [];
 
   return [...work, ...projects, ...campus, ...volunteer].filter((item) => item.organization || item.title || item.bullets.length > 0);
 }
@@ -302,4 +325,8 @@ function normalizeTextList(value: string[] | string | undefined) {
   }
 
   return Array.isArray(value) ? value.filter(Boolean) : value.split(/\n|；|;/).map((item) => item.trim()).filter(Boolean);
+}
+
+function isSectionVisible(data: ResumeData, key: string) {
+  return !(data.hiddenSections || []).includes(key);
 }
