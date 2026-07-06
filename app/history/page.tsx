@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { clearLocalHistory, deleteLocalHistory, getLocalHistory } from "@/lib/history/localHistory";
 import type { ResumeHistoryRecord } from "@/lib/history/types";
+import { setActiveResumeDraftId } from "@/src/lib/resume-storage/resumeDraft";
 
 type HistoryResponse = {
   configured: boolean;
@@ -55,7 +56,18 @@ export default function HistoryPage() {
   const selectedRecord = history?.records.find((record) => record.id === selectedId) || null;
 
   function openResult(record: ResumeHistoryRecord) {
-    sessionStorage.setItem("resume-analysis-result", JSON.stringify(record.analysis_result));
+    setActiveResumeDraftId(record.id);
+    sessionStorage.setItem(
+      "resume-analysis-result",
+      JSON.stringify({
+        ...record.analysis_result,
+        history: {
+          id: record.id,
+          saved: true,
+          storage: record.storage || "supabase"
+        }
+      })
+    );
     window.location.href = "/result";
   }
 

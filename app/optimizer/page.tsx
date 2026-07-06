@@ -114,13 +114,19 @@ export default function OptimizerPage() {
       sessionStorage.setItem("resume-analysis-result", JSON.stringify(data));
 
       if (!data.history?.saved) {
-        saveLocalHistory(
-          createLocalHistoryRecord({
-            resumeText,
-            jobDescription,
-            analysisResult: data
-          })
-        );
+        const localRecord = createLocalHistoryRecord({
+          resumeText,
+          jobDescription,
+          analysisResult: data
+        });
+        saveLocalHistory(localRecord);
+        data.history = {
+          saved: true,
+          id: localRecord.id,
+          createdAt: localRecord.created_at,
+          storage: "local"
+        };
+        sessionStorage.setItem("resume-analysis-result", JSON.stringify(data));
       }
 
       setActiveStep(analysisSteps.length - 1);

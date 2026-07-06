@@ -47,6 +47,12 @@
   font-weight: 700;
 }
 
+.resume-generator-card .resume-generator-save-state {
+  color: #175fe6;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .resume-generator-card {
   border: 1px solid #dbe3ef;
   border-radius: 16px;

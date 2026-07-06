@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import AvatarUploader from "@/src/components/AvatarUploader";
 import A4PreviewFrame from "@/src/components/resume-templates/A4PreviewFrame";
 import Template1 from "@/src/components/resume-templates/Template1";
@@ -10,6 +10,7 @@ import Template3 from "@/src/components/resume-templates/Template3";
 import { sampleResume } from "@/src/data/sampleResume";
 import { exportResumeDocx } from "@/src/lib/resume-export/exportDocx";
 import { exportResumeHtmlFromElement } from "@/src/lib/resume-export/exportHtml";
+import { getActiveResumeDraftId, getResumeDraftForCurrentSession, saveResumeDraft } from "@/src/lib/resume-storage/resumeDraft";
 import type {
   AwardItem,
   CampusExperienceItem,
@@ -73,20 +74,28 @@ export default function ResumeGeneratorPage() {
   const [mode, setMode] = useState<Mode>("preview");
   const [saved, setSaved] = useState(false);
   const [exportError, setExportError] = useState("");
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftId, setDraftId] = useState("");
+  const [resumeData, setResumeData] = useState<ResumeData>(sampleResume);
 
-  const initialResumeData = useMemo<ResumeData>(() => {
-    if (typeof window === "undefined") {
-      return sampleResume;
-    }
-
-    const raw = sessionStorage.getItem("generated-resume-json");
-    return raw ? (JSON.parse(raw) as ResumeData) : sampleResume;
+  useEffect(() => {
+    queueMicrotask(() => {
+      setDraftId(getActiveResumeDraftId());
+      setResumeData(getResumeDraftForCurrentSession() || sampleResume);
+      setDraftReady(true);
+    });
   }, []);
 
-  const [resumeData, setResumeData] = useState<ResumeData>(initialResumeData);
+  useEffect(() => {
+    if (!draftReady) {
+      return;
+    }
+
+    saveResumeDraft(resumeData, draftId);
+  }, [draftId, draftReady, resumeData]);
 
   function saveResumeJson() {
-    sessionStorage.setItem("generated-resume-json", JSON.stringify(resumeData));
+    saveResumeDraft(resumeData, draftId);
     setSaved(true);
     window.setTimeout(() => setSaved(false), 1800);
   }
@@ -173,6 +182,7 @@ export default function ResumeGeneratorPage() {
             </button>
           </div>
           <p>DOCX 可在 Word 中继续编辑；HTML 可直接用浏览器打开或分享；PDF 用于最终投递。</p>
+          <p className="resume-generator-save-state">编辑内容会自动保存到浏览器，下次进入会继续保留。</p>
           {exportError ? <p className="resume-generator-error">{exportError}</p> : null}
         </section>
       </aside>

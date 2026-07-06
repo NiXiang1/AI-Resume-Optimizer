@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { ResumeAnalysis } from "@/lib/types";
 import { convertOptimizedResumeToResumeData } from "@/src/lib/resume-json/convertOptimizedResume";
+import { getSavedResumeDraft, setSessionResumeDraft } from "@/src/lib/resume-storage/resumeDraft";
 
 const emptyKeywords: ResumeAnalysis["jd_keywords"] = {
   technical: [],
@@ -52,8 +53,9 @@ export default function ResultPage() {
       return;
     }
 
-    const resumeJson = convertOptimizedResumeToResumeData(result.optimized_resume);
-    sessionStorage.setItem("generated-resume-json", JSON.stringify(resumeJson));
+    const draftId = getResultDraftId(result);
+    const resumeJson = getSavedResumeDraft(draftId) || convertOptimizedResumeToResumeData(result.optimized_resume);
+    setSessionResumeDraft(resumeJson, draftId);
     window.location.href = "/resume-generator";
   }
 
@@ -147,6 +149,11 @@ export default function ResultPage() {
       </section>
     </main>
   );
+}
+
+function getResultDraftId(result: ResumeAnalysis) {
+  const history = (result as ResumeAnalysis & { history?: { id?: string } }).history;
+  return history?.id || "";
 }
 
 function KeywordCard({ keywords }: { keywords: ResumeAnalysis["jd_keywords"] }) {
