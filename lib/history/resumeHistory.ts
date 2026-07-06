@@ -70,6 +70,72 @@ export async function listResumeHistory() {
   };
 }
 
+export async function importResumeHistory(records: ResumeHistoryRecord[]) {
+  const supabase = createSupabaseServerClient();
+
+  if (!supabase) {
+    return {
+      imported: false,
+      importedRecords: [] as ResumeHistoryRecord[],
+      reason: "Supabase 未配置"
+    };
+  }
+
+  const cleanRecords = records
+    .filter((record) => record.resume_text && record.job_description && record.analysis_result)
+    .map((record) => ({
+      resume_text: record.resume_text,
+      job_description: record.job_description,
+      analysis_result: record.analysis_result,
+      optimized_resume: record.optimized_resume || record.analysis_result.optimized_resume,
+      score: record.score ?? record.analysis_result.score,
+      created_at: record.created_at
+    }));
+
+  if (!cleanRecords.length) {
+    return {
+      imported: true,
+      importedRecords: [] as ResumeHistoryRecord[],
+      skipped: records.length
+    };
+  }
+
+  const { data: existingRecords, error: existingError } = await supabase
+    .from(historyTable)
+    .select("resume_text, job_description, score, created_at")
+    .limit(1000);
+
+  if (existingError) {
+    throw new Error(existingError.message);
+  }
+
+  const existingKeys = new Set((existingRecords || []).map((record) => getHistoryFingerprint(record)));
+  const recordsToInsert = cleanRecords.filter((record) => !existingKeys.has(getHistoryFingerprint(record)));
+
+  if (!recordsToInsert.length) {
+    return {
+      imported: true,
+      importedRecords: [] as ResumeHistoryRecord[],
+      skipped: cleanRecords.length
+    };
+  }
+
+  const { data, error } = await supabase
+    .from(historyTable)
+    .insert(recordsToInsert)
+    .select("id, resume_text, job_description, analysis_result, optimized_resume, score, created_at");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return {
+    imported: true,
+    importedRecords: (data || []) as ResumeHistoryRecord[],
+    skipped: cleanRecords.length - recordsToInsert.length
+  };
+}
+
 export async function deleteResumeHistory(id: string) {
   const supabase = createSupabaseServerClient();
 
@@ -93,4 +159,8 @@ export async function deleteResumeHistory(id: string) {
   return {
     deleted: true
   };
+}
+
+function getHistoryFingerprint(record: Pick<ResumeHistoryRecord, "resume_text" | "job_description" | "score" | "created_at">) {
+  return [record.created_at, record.score, record.resume_text.slice(0, 120), record.job_description.slice(0, 120)].join("|");
 }

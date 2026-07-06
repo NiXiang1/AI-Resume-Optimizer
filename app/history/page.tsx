@@ -18,6 +18,7 @@ export default function HistoryPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  const [migrationMessage, setMigrationMessage] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,7 +32,43 @@ export default function HistoryPage() {
           throw new Error(data.message || "云端历史记录暂时不可用。");
         }
 
-        const records = data.configured ? data.records : localRecords;
+        let records = data.configured ? data.records : localRecords;
+
+        if (data.configured && localRecords.length > 0) {
+          try {
+            const importResponse = await fetch("/api/history", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ records: localRecords })
+            });
+            const importData = (await importResponse.json()) as {
+              importedRecords?: ResumeHistoryRecord[];
+              skipped?: number;
+              message?: string;
+            };
+
+            if (!importResponse.ok) {
+              throw new Error(importData.message || "本地历史记录迁移失败。");
+            }
+
+            clearLocalHistory();
+            records = mergeHistoryRecords([...(importData.importedRecords || []), ...records]);
+            setMigrationMessage(
+              importData.importedRecords?.length
+                ? `已把 ${importData.importedRecords.length} 条本地历史记录迁移到 Supabase。`
+                : "本地历史记录已经在 Supabase 中，无需重复迁移。"
+            );
+          } catch (migrationError) {
+            records = mergeHistoryRecords([...localRecords, ...records]);
+            setMigrationMessage(
+              migrationError instanceof Error
+                ? `本地历史记录暂时没有迁移成功：${migrationError.message}`
+                : "本地历史记录暂时没有迁移成功。"
+            );
+          }
+        }
 
         setHistory({
           ...data,
@@ -144,6 +181,8 @@ export default function HistoryPage() {
       {error ? <Notice title="历史记录读取失败" description={error} tone="error" /> : null}
 
       {deleteError ? <Notice title="删除失败" description={deleteError} tone="error" /> : null}
+
+      {migrationMessage ? <Notice title="本地历史迁移" description={migrationMessage} tone="info" /> : null}
 
       {history && !history.configured ? (
         <LocalModeNotice message={history.message} cloudUnavailable={history.cloudUnavailable} />
@@ -337,6 +376,19 @@ function TextBlock({ title, content, dark = false }: { title: string; content: s
       </pre>
     </section>
   );
+}
+
+function mergeHistoryRecords(records: ResumeHistoryRecord[]) {
+  const recordMap = new Map<string, ResumeHistoryRecord>();
+
+  records.forEach((record) => {
+    const key = `${record.created_at}-${record.score}-${record.resume_text.slice(0, 80)}-${record.job_description.slice(0, 80)}`;
+    if (!recordMap.has(key)) {
+      recordMap.set(key, record);
+    }
+  });
+
+  return Array.from(recordMap.values()).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
 function formatDate(value: string) {

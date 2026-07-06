@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { deleteResumeHistory, listResumeHistory } from "@/lib/history/resumeHistory";
+import { deleteResumeHistory, importResumeHistory, listResumeHistory } from "@/lib/history/resumeHistory";
+import type { ResumeHistoryRecord } from "@/lib/history/types";
 
 export async function GET() {
   try {
@@ -47,6 +48,36 @@ export async function DELETE(request: Request) {
     return NextResponse.json(
       {
         message: error instanceof Error ? error.message : "历史记录删除失败。"
+      },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as { records?: ResumeHistoryRecord[] };
+    const records = Array.isArray(body.records) ? body.records : [];
+
+    if (!records.length) {
+      return NextResponse.json({
+        imported: true,
+        importedRecords: [],
+        skipped: 0
+      });
+    }
+
+    const result = await importResumeHistory(records);
+
+    if (!result.imported) {
+      return NextResponse.json({ message: result.reason || "本地历史记录迁移失败。" }, { status: 500 });
+    }
+
+    return NextResponse.json(result);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        message: error instanceof Error ? error.message : "本地历史记录迁移失败。"
       },
       { status: 500 }
     );
