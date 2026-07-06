@@ -15,6 +15,13 @@ export function createSupabaseServerClient() {
   return createClient(supabaseUrl, serverKey, {
     auth: {
       persistSession: false
+    },
+    global: {
+      fetch: (input, init) =>
+        fetch(input, {
+          ...init,
+          signal: init?.signal || AbortSignal.timeout(5000)
+        })
     }
   });
 }

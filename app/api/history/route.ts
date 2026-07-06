@@ -6,15 +6,25 @@ export async function GET() {
     const result = await listResumeHistory();
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json(
-      {
-        configured: true,
-        records: [],
-        message: error instanceof Error ? error.message : "历史记录读取失败。"
-      },
-      { status: 500 }
-    );
+    const message = normalizeHistoryError(error);
+
+    return NextResponse.json({
+      configured: false,
+      cloudUnavailable: true,
+      records: [],
+      message: `云端历史记录暂时不可用：${message}`
+    });
   }
+}
+
+function normalizeHistoryError(error: unknown) {
+  const message = error instanceof Error ? error.message : "历史记录读取失败。";
+
+  if (message.toLowerCase().includes("fetch failed")) {
+    return "Supabase 连接失败，请检查 SUPABASE_URL 是否正确，或确认 Supabase 项目是否处于可访问状态。";
+  }
+
+  return message;
 }
 
 export async function DELETE(request: Request) {

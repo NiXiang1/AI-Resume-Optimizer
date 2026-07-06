@@ -8,6 +8,7 @@ import type { ResumeHistoryRecord } from "@/lib/history/types";
 type HistoryResponse = {
   configured: boolean;
   records: ResumeHistoryRecord[];
+  cloudUnavailable?: boolean;
   message?: string;
 };
 
@@ -23,12 +24,12 @@ export default function HistoryPage() {
       try {
         const response = await fetch("/api/history");
         const data = (await response.json()) as HistoryResponse;
+        const localRecords = getLocalHistory();
 
         if (!response.ok) {
-          throw new Error(data.message || "历史记录读取失败。");
+          throw new Error(data.message || "云端历史记录暂时不可用。");
         }
 
-        const localRecords = getLocalHistory();
         const records = data.configured ? data.records : localRecords;
 
         setHistory({
@@ -37,7 +38,14 @@ export default function HistoryPage() {
         });
         setSelectedId(records[0]?.id || null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "历史记录读取失败。");
+        const localRecords = getLocalHistory();
+        setHistory({
+          configured: false,
+          cloudUnavailable: true,
+          records: localRecords,
+          message: err instanceof Error ? err.message : "云端历史记录暂时不可用。"
+        });
+        setSelectedId(localRecords[0]?.id || null);
       }
     }
 
@@ -126,7 +134,7 @@ export default function HistoryPage() {
       {deleteError ? <Notice title="删除失败" description={deleteError} tone="error" /> : null}
 
       {history && !history.configured ? (
-        <LocalModeNotice />
+        <LocalModeNotice message={history.message} cloudUnavailable={history.cloudUnavailable} />
       ) : null}
 
       {history && history.records.length === 0 ? (
@@ -191,15 +199,18 @@ export default function HistoryPage() {
   );
 }
 
-function LocalModeNotice() {
+function LocalModeNotice({ message, cloudUnavailable }: { message?: string; cloudUnavailable?: boolean }) {
   return (
     <section className="mb-5 rounded-2xl border border-brand-100 bg-white p-6 shadow-soft">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h2 className="text-lg font-bold text-ink">当前使用本地历史记录</h2>
+          <h2 className="text-lg font-bold text-ink">{cloudUnavailable ? "云端历史暂时不可用" : "当前使用本地历史记录"}</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
-            还没有配置 Supabase，所以分析结果会先保存在这个浏览器里。配置 Supabase 后，新的分析结果会自动保存到云端数据库。
+            {cloudUnavailable
+              ? "系统已自动切换到这个浏览器里的本地历史记录。新的分析结果如果暂时保存不到 Supabase，也会先保存在本地。"
+              : "还没有配置 Supabase，所以分析结果会先保存在这个浏览器里。配置 Supabase 后，新的分析结果会自动保存到云端数据库。"}
           </p>
+          {message ? <p className="mt-2 max-w-3xl text-sm leading-6 text-red-700">{message}</p> : null}
         </div>
         <Link
           href="/optimizer"
