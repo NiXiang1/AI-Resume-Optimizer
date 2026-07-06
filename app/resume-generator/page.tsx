@@ -9,6 +9,7 @@ import Template2 from "@/src/components/resume-templates/Template2";
 import Template3 from "@/src/components/resume-templates/Template3";
 import { sampleResume } from "@/src/data/sampleResume";
 import { exportResumeDocx } from "@/src/lib/resume-export/exportDocx";
+import { exportResumeHtmlFromElement } from "@/src/lib/resume-export/exportHtml";
 import type {
   AwardItem,
   CampusExperienceItem,
@@ -71,6 +72,7 @@ export default function ResumeGeneratorPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateId>("template2");
   const [mode, setMode] = useState<Mode>("preview");
   const [saved, setSaved] = useState(false);
+  const [exportError, setExportError] = useState("");
 
   const initialResumeData = useMemo<ResumeData>(() => {
     if (typeof window === "undefined") {
@@ -97,6 +99,20 @@ export default function ResumeGeneratorPage() {
   async function handleExportDocx() {
     saveResumeJson();
     await exportResumeDocx(resumeData, `${resumeData.basicInfo?.name || "resume"}.docx`);
+  }
+
+  function handleExportHtml() {
+    saveResumeJson();
+    setExportError("");
+
+    const previewElement = document.querySelector<HTMLElement>(".resume-generator-preview article");
+
+    if (!previewElement) {
+      setExportError("暂时没有找到可导出的简历预览，请稍后重试。");
+      return;
+    }
+
+    exportResumeHtmlFromElement(previewElement, `${resumeData.basicInfo?.name || "resume"}.html`);
   }
 
   return (
@@ -149,11 +165,15 @@ export default function ResumeGeneratorPage() {
             <button type="button" onClick={handleExportDocx}>
               导出 DOCX
             </button>
+            <button type="button" onClick={handleExportHtml}>
+              导出 HTML
+            </button>
             <button type="button" onClick={exportPdf} className="primary">
               导出 PDF
             </button>
           </div>
-          <p>DOCX 可在 Word 中继续编辑；PDF 用于最终投递。PDF 导出会打开浏览器打印面板。</p>
+          <p>DOCX 可在 Word 中继续编辑；HTML 可直接用浏览器打开或分享；PDF 用于最终投递。</p>
+          {exportError ? <p className="resume-generator-error">{exportError}</p> : null}
         </section>
       </aside>
 

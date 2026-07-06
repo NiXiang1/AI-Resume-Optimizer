@@ -42,6 +42,11 @@
   line-height: 1.7;
 }
 
+.resume-generator-card .resume-generator-error {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
 .resume-generator-card {
   border: 1px solid #dbe3ef;
   border-radius: 16px;
