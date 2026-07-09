@@ -1,98 +1,112 @@
 # AI Resume Optimizer
 
-AI Resume Optimizer / AI 简历优化助手，是一个面向大学生、秋招求职者和转岗人群的 AI 简历优化工具。用户可以粘贴简历文本和目标岗位 JD，系统会调用大模型分析简历与岗位的匹配度，输出结构化诊断结果，并生成一版更适合投递该岗位的优化简历文本。
+AI Resume Optimizer / AI 简历优化助手，是一个面向大学生秋招、实习投递、转岗求职者的 AI 简历优化工具。用户可以上传或粘贴简历，输入目标岗位 JD，系统会分析简历与岗位的匹配度，提取岗位关键词，给出结构化修改建议，并生成一版更适合投递该岗位的优化简历。
 
-这个项目适合作为 AI 应用方向的秋招项目，也可以继续扩展成一个轻量副业工具。
+项目已经覆盖“输入简历 -> AI 分析 -> 结果诊断 -> 优化改写 -> 生成精美简历 -> 在线编辑 -> 导出投递文件”的完整闭环，适合作为 AI 应用、Next.js 全栈项目或求职作品集项目展示。
 
-## 项目亮点
+## 核心能力
 
-- 使用大模型完成简历与岗位 JD 的语义匹配分析
-- 通过 Prompt Engineering 约束 AI 返回结构化 JSON
-- 支持根据不同岗位生成定制化简历文本
-- 封装兼容大模型 API，当前支持 DeepSeek，后续可替换为 OpenAI 或其他兼容服务
-- 增加 AI 返回结果校验，避免模型字段缺失导致页面崩溃
-- 增加友好错误提示，覆盖 Key 错误、余额不足、网络失败、限流和 JSON 格式异常等情况
-- 完成从需求分析、接口封装、前端交互到结果展示的 AI 产品闭环
+- 简历与岗位 JD 的语义匹配分析，输出 0-100 匹配度评分。
+- JD 关键词拆解，覆盖技术关键词、经验要求、软技能和加分项。
+- 简历优势、问题诊断、缺失关键词和分模块优化建议。
+- 原始表达与优化表达对比，展示 AI 改写逻辑。
+- 根据目标岗位生成定制化优化版简历文本。
+- 支持 PDF / Word `.docx` 简历上传解析，也支持手动粘贴文本。
+- Mock / 真实模型双模式，便于本地演示和真实调用切换。
+- DeepSeek / OpenAI-compatible Chat Completions API 接入。
+- AI 返回 JSON 结构校验与友好错误提示。
+- Supabase 云端历史记录，本地历史记录兜底，并支持本地历史迁移到 Supabase。
+- 优化结果可一键生成精美简历，支持在线编辑、模板切换、头像上传裁剪、HTML 导出和 PDF 导出。
 
-## 已实现功能
+## 功能模块
 
 ### 首页
 
-- 项目介绍
-- 产品亮点展示
-- “开始优化简历”入口
+- 项目价值介绍。
+- 产品亮点展示。
+- “开始优化简历”和“查看历史记录”入口。
 
 ### 简历优化页
 
-- 简历文本输入
-- PDF 简历上传并自动解析文本
-- Word .docx 简历上传并自动解析文本
-- 岗位 JD 输入
-- 示例内容一键填充
-- 步骤式分析状态：
-  - 正在解析简历
-  - 正在分析岗位 JD
-  - 正在匹配关键词
-  - 正在生成优化建议
+- 简历文本输入。
+- PDF / `.docx` 文件上传并自动解析文本。
+- 上传文件类型校验、空文件校验和 8MB 大小限制。
+- 岗位 JD 输入。
+- 示例内容一键填充。
+- Mock / 真实模型模式切换。
+- 步骤式分析状态展示：
+  - 解析简历
+  - 分析岗位 JD
+  - 匹配关键词
+  - 生成优化建议
+  - 生成优化版简历
 
 ### 结果页
 
-- 匹配度评分
-- 整体评价
-- 简历优势
-- 问题诊断
-- 缺失关键词
-- JD 岗位关键词提取
-- JD 匹配分析
-- 教育经历优化建议
-- 项目经历优化建议
-- 技能栈优化建议
-- 实习/实践经历优化建议
-- 个人总结优化建议
-- 优化后的简历文本
-- 原始简历 / 优化后表达对比
-- 一键复制优化版简历
-- 一键生成精美简历
+- 匹配度评分和整体评价。
+- 简历优势、问题诊断、缺失关键词。
+- JD 技术关键词、经验关键词、软技能和加分项提取。
+- JD 匹配等级、已匹配关键词和差距说明。
+- 教育背景、项目经历、技能栈、实践经历、个人总结优化建议。
+- 原始简历表达 / 优化后表达对比。
+- 优化版简历文本展示。
+- 一键复制优化版简历。
+- 一键进入精美简历生成页。
+
+### 历史记录页
+
+- 查看已保存的简历分析记录。
+- 支持查看原简历、岗位 JD、完整分析结果和优化版简历。
+- Supabase 已配置时保存到云端数据库。
+- Supabase 未配置或暂不可用时自动使用浏览器本地历史。
+- 本地历史最多保留 20 条。
+- 支持删除历史记录。
+- 支持将本地历史记录迁移到 Supabase。
+- 支持从历史记录继续生成精美简历。
 
 ### 精美简历生成页
 
-- 将 AI 优化后的简历文本转换为统一 `resume.json`
-- 内置“左侧深色信息栏模板”
-- 自动把 `resume.json` 填充到模板
-- 支持预览模式 / 编辑模式切换
-- 支持在线编辑基本信息、教育背景、技能、项目经历、实习经历、校园经历、荣誉奖项、证书、志愿服务和自我评价
-- 支持新增、删除、上移、下移数组内容
-- 支持在线 A4 预览
-- 支持导出可编辑 DOCX
-- 支持通过浏览器打印导出 PDF
-- 预留 `template_parser` 模块，后续可接入视觉模型解析用户上传的 PDF / Word / 图片模板
-
-### AI 接口能力
-
-- `/api/analyze` 后端分析接口
-- `/api/extract-resume` 简历文件解析接口
-- `/api/history` 历史记录查询接口
-- `analyzeResume()` AI 调用封装
-- Mock / 真实 API 双模式
-- DeepSeek OpenAI-compatible API 接入
-- AI 返回 JSON 结构校验
-- 友好错误处理
-- JD 技术关键词、经验关键词、软技能关键词和加分项提取
-- 简历改写对比生成
-- Supabase 历史记录保存与查询
+- 将 AI 优化后的简历文本转换为统一 `resume.json`。
+- 内置 3 套 A4 简历模板：
+  - Template1：左侧深色信息栏模板。
+  - Template2：蓝色分区式中文简历模板。
+  - Template3：更强调项目与能力结构的简历模板。
+- 支持预览模式 / 编辑模式切换。
+- 支持在线编辑：
+  - 基本信息
+  - 头像
+  - 教育背景
+  - 专业技能
+  - 项目经历
+  - 实习 / 工作经历
+  - 校园经历
+  - 荣誉奖项
+  - 证书
+  - 优势亮点
+  - 志愿服务
+  - 自我评价
+  - 自定义板块
+- 支持新增、删除、上移、下移数组内容。
+- 支持隐藏和恢复简历板块。
+- 支持头像上传、拖拽裁剪、缩放和自动人脸定位。
+- 支持 A4 预览和超出一页提示。
+- 支持导出独立 HTML 文件。
+- 支持直接生成并下载 PDF 文件。
+- 编辑内容会自动保存到当前浏览器，下次进入继续保留。
 
 ## 技术栈
 
 前端：
 
-- Next.js
-- React
+- Next.js 16
+- React 19
 - TypeScript
 - Tailwind CSS
 
 后端：
 
-- Next.js API Route
+- Next.js App Router
+- Route Handlers
 
 AI：
 
@@ -100,74 +114,73 @@ AI：
 - OpenAI-compatible Chat Completions API
 - Prompt Engineering
 - JSON 结构化输出
+- AI 响应结构校验
+
+数据与文件：
+
+- Supabase
+- PostgreSQL
+- `pdf-parse`
+- `mammoth`
+- `html2canvas`
+- `jspdf`
 
 工程化：
 
 - ESLint
-- TypeScript 类型检查
+- TypeScript
 - npm scripts
+- Vercel 部署配置
 
-数据存储：
-
-- Supabase
-- PostgreSQL
-
-## 项目目录结构
+## 项目目录
 
 ```text
 AI-Resume-Optimizer
 ├── app
 │   ├── api
-│   │   ├── analyze
-│   │   │   └── route.ts          # 简历分析 API
-│   │   ├── extract-resume
-│   │   │   └── route.ts          # 简历文件解析 API
-│   │   └── history
-│   │       └── route.ts          # 历史记录查询 API
-│   ├── history
-│   │   └── page.tsx              # 历史记录页
-│   ├── optimizer
-│   │   └── page.tsx              # 简历/JD 输入页
-│   ├── result
-│   │   └── page.tsx              # 分析结果页
+│   │   ├── analyze/route.ts          # 简历分析 API
+│   │   ├── extract-resume/route.ts   # PDF / Word 文本解析 API
+│   │   └── history/route.ts          # 历史记录查询、删除、迁移 API
+│   ├── history/page.tsx              # 历史记录页
+│   ├── optimizer/page.tsx            # 简历与 JD 输入页
+│   ├── result/page.tsx               # 分析结果页
 │   ├── resume-generator
-│   │   ├── page.tsx              # 精美简历生成页
-│   │   └── resume-generator.css  # 生成页样式
+│   │   ├── page.tsx                  # 精美简历生成和编辑页
+│   │   └── resume-generator.css      # 简历生成页样式
 │   ├── templates
-│   │   └── template1
-│   │       └── page.tsx          # Template1 预览页
-│   ├── globals.css               # 全局样式
-│   ├── layout.tsx                # 页面布局
-│   └── page.tsx                  # 首页
+│   │   ├── template1/page.tsx        # Template1 预览页
+│   │   ├── template2/page.tsx        # Template2 预览页
+│   │   └── template3/page.tsx        # Template3 预览页
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
 ├── lib
 │   ├── ai
-│   │   ├── analyzeResume.ts      # AI 分析主逻辑
-│   │   ├── errors.ts             # 错误类型与友好错误转换
-│   │   ├── mockAnalysis.ts       # Mock 分析结果
-│   │   └── validateAnalysis.ts   # AI 返回结果结构校验
+│   │   ├── analyzeResume.ts          # AI 分析主逻辑
+│   │   ├── errors.ts                 # 错误类型与友好错误转换
+│   │   ├── mockAnalysis.ts           # Mock 分析结果
+│   │   └── validateAnalysis.ts       # AI 返回结果结构校验
 │   ├── history
-│   │   ├── resumeHistory.ts      # Supabase 历史记录读写
-│   │   └── types.ts              # 历史记录类型
-│   ├── resume
-│   │   └── extractResumeText.ts  # PDF / Word 文本解析
-│   ├── supabase
-│   │   └── server.ts             # 服务端 Supabase Client
-│   └── types.ts                  # 全局类型定义
+│   │   ├── localHistory.ts           # 浏览器本地历史
+│   │   ├── resumeHistory.ts          # Supabase 历史记录读写
+│   │   └── types.ts
+│   ├── resume/extractResumeText.ts   # PDF / Word 文本解析
+│   ├── supabase/server.ts            # 服务端 Supabase Client
+│   └── types.ts
 ├── src
 │   ├── components
-│   │   └── resume-templates
-│   │       ├── Template1.tsx     # 左侧深色信息栏简历模板
-│   │       └── Template1.css     # A4 模板样式与打印样式
-│   ├── data
-│   │   └── sampleResume.ts       # 模板示例数据
+│   │   ├── AvatarUploader.tsx        # 头像上传与裁剪
+│   │   └── resume-templates          # A4 简历模板与预览组件
+│   ├── data/sampleResume.ts
 │   ├── lib
-│   │   └── resume-json
-│   │       └── convertOptimizedResume.ts # 优化文本转 resume.json
-│   └── template_parser
-│       └── index.ts              # 未来模板视觉解析预留模块
+│   │   ├── resume-export             # HTML / PDF 导出
+│   │   ├── resume-json               # 优化文本转 resume.json
+│   │   └── resume-storage            # 简历草稿本地保存
+│   ├── template_parser/index.ts      # 未来模板视觉解析预留模块
+│   └── types/resume.ts
+├── supabase/schema.sql               # Supabase 表结构
+├── PRODUCT.md
 ├── package.json
-├── tailwind.config.ts
-├── tsconfig.json
 └── README.md
 ```
 
@@ -191,52 +204,27 @@ npm run dev
 http://127.0.0.1:3000
 ```
 
-如果 `localhost:3000` 无法访问，可以尝试使用 `127.0.0.1:3000`。
+常用命令：
 
-## 上传简历文件
+```bash
+npm run dev      # 启动开发服务
+npm run lint     # 代码检查
+npm run build    # 生产构建
+```
 
-在简历优化页可以选择上传简历文件，系统会自动解析文本并填入“简历文本”输入框。
+## 环境变量
 
-当前支持：
+项目默认支持 Mock 模式，不配置模型 Key 也可以跑通主要页面流程。
 
-- PDF
-- Word `.docx`
-
-暂不支持：
-
-- Word `.doc`
-- 纯图片扫描版 PDF
-
-如果文件解析结果不理想，可以直接把简历文本粘贴到输入框中。
-
-## Mock / 真实模型双模式
-
-简历优化页顶部提供“分析模式”切换：
-
-- Mock 演示：返回内置示例分析结果，适合本地演示、页面调试和线上 Demo，不消耗模型额度。
-- 真实模型：调用 `.env.local` 中配置的大模型 API，生成真实诊断结果。
-
-后端也支持通过环境变量设置默认模式。页面请求传入的模式优先级最高，其次读取 `AI_MODE`，最后兼容旧的 `USE_MOCK_AI`。
-
-### 使用 Mock 模式
-
-如果只是想演示页面流程，不想消耗 API 额度，可以使用 mock 模式。
-
-新建或修改 `.env.local`：
+### Mock 演示模式
 
 ```bash
 AI_MODE=mock
 ```
 
-然后重启：
+### 真实模型模式
 
-```bash
-npm run dev
-```
-
-## 接入 DeepSeek API
-
-新建 `.env.local`：
+DeepSeek 示例：
 
 ```bash
 DEEPSEEK_API_KEY=你的 DeepSeek API Key
@@ -245,24 +233,58 @@ AI_MODEL=deepseek-v4-flash
 AI_MODE=real
 ```
 
-启动项目：
+通用 OpenAI-compatible 配置：
 
 ```bash
-npm run dev
+AI_API_KEY=你的 API Key
+AI_BASE_URL=https://你的模型服务地址
+AI_MODEL=你的模型名称
+AI_MODE=real
 ```
 
-提交简历和 JD 后，系统会请求 DeepSeek API 并生成真实分析结果。
+OpenAI 示例：
 
-注意：`.env.local` 已经被 `.gitignore` 忽略，不要把 API Key 提交到仓库。
+```bash
+AI_API_KEY=你的 OpenAI API Key
+AI_BASE_URL=https://api.openai.com
+AI_MODEL=gpt-4o-mini
+AI_MODE=real
+```
 
-## 接入 Supabase 历史记录
+优先级说明：
 
-历史记录会保存：
+- 页面请求中的模式优先级最高。
+- 其次读取 `AI_MODE`。
+- 最后兼容旧配置 `USE_MOCK_AI`。
+
+`.env.local` 已被 `.gitignore` 忽略，请不要把 API Key 提交到仓库。
+
+## 简历文件上传
+
+优化页支持上传简历文件，解析成功后会自动填入“简历文本”输入框。
+
+当前支持：
+
+- PDF
+- Word `.docx`
+
+限制：
+
+- 文件大小不超过 8MB。
+- 暂不支持旧版 Word `.doc`。
+- 暂不支持纯图片扫描版 PDF 的 OCR 识别。
+
+如果文件解析结果不理想，可以直接复制简历正文并粘贴到输入框。
+
+## Supabase 历史记录
+
+历史记录保存内容：
 
 - 原简历
 - 目标岗位 JD
 - 完整分析结果
 - 优化版简历
+- 匹配度评分
 - 创建时间
 
 ### 1. 创建数据表
@@ -284,7 +306,7 @@ create index if not exists resume_analysis_history_created_at_idx
   on public.resume_analysis_history (created_at desc);
 ```
 
-同样的 SQL 也保存在：
+同样的 SQL 保存在：
 
 ```text
 supabase/schema.sql
@@ -292,63 +314,30 @@ supabase/schema.sql
 
 ### 2. 配置环境变量
 
-在 `.env.local` 中添加：
-
 ```bash
 SUPABASE_URL=你的 Supabase Project URL
 SUPABASE_SECRET_KEY=你的 Supabase secret key
 ```
 
-如果你的 Supabase 项目仍然使用旧版 API key，也可以配置：
+如果你的 Supabase 项目仍使用旧版 API key，也可以配置：
 
 ```bash
 SUPABASE_SERVICE_ROLE_KEY=你的 Supabase service_role key
 ```
 
-注意：`SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY` 只能在服务端使用，不要暴露到前端，也不要提交到仓库。
+`SUPABASE_SECRET_KEY` / `SUPABASE_SERVICE_ROLE_KEY` 只能在服务端使用，不要暴露到前端。
 
-### 3. 使用历史记录
+### 3. 本地历史兜底
 
-启动项目后打开：
+没有配置 Supabase，或 Supabase 暂时连接失败时，系统会自动使用当前浏览器的 `localStorage` 保存历史记录：
 
-```text
-http://127.0.0.1:3000/history
-```
-
-完成一次新的简历分析后，系统会自动尝试保存历史记录。如果 Supabase 未配置，分析流程仍然可用，只是历史记录不会写入数据库。
-
-未配置 Supabase 时，项目会自动使用浏览器本地历史记录：
-
-- 新的分析结果会保存到当前浏览器的 `localStorage`
-- 历史页会标注“当前使用本地历史记录”
-- 本地历史最多保留 20 条
-- 换浏览器或清理浏览器数据后，本地历史会丢失
-
-配置 Supabase 后，新的分析结果会保存到云端数据库。
-
-## 切换其他兼容模型
-
-项目使用 OpenAI-compatible API 格式。想切换到其他兼容服务时，主要修改下面三个环境变量：
-
-```bash
-AI_API_KEY=你的 API Key
-AI_BASE_URL=https://你的模型服务地址
-AI_MODEL=你的模型名称
-AI_MODE=real
-```
-
-例如 OpenAI：
-
-```bash
-AI_API_KEY=你的 OpenAI API Key
-AI_BASE_URL=https://api.openai.com
-AI_MODEL=gpt-4o-mini
-AI_MODE=real
-```
+- 本地历史最多保存 20 条。
+- 历史页会提示当前使用本地历史。
+- 配置 Supabase 后，可以在历史页把本地历史迁移到云端。
 
 ## AI 返回 JSON 格式
 
-后端期望 AI 返回类似下面的结构：
+后端期望模型返回合法 JSON，并会通过 `lib/ai/validateAnalysis.ts` 做结构校验。核心结构如下：
 
 ```json
 {
@@ -387,50 +376,28 @@ AI_MODE=real
 }
 ```
 
-`lib/ai/validateAnalysis.ts` 会对结果进行校验。如果字段缺失或格式不对，接口会返回友好的错误提示。
+如果模型返回内容为空、不是合法 JSON，或字段缺失，接口会返回可读的错误提示，避免页面崩溃。
 
-## 精美简历生成
+## 简历生成与导出
 
-完成一次简历分析后，在结果页点击“生成精美简历”。
+从结果页点击“生成精美简历”后，系统会：
 
-系统会执行：
+1. 读取 `optimized_resume`。
+2. 调用 `convertOptimizedResumeToResumeData()`。
+3. 生成统一 `resume.json`。
+4. 写入当前会话草稿。
+5. 进入 `/resume-generator` 并渲染模板。
 
-1. 读取 `optimized_resume`
-2. 调用 `convertOptimizedResumeToResumeData()`
-3. 生成统一 `resume.json`
-4. 进入 `/resume-generator`
-5. 自动填充内置 Template1
+支持导出：
 
-在线编辑：
-
-```text
-点击“编辑简历” -> 修改表单 -> 右侧实时预览 -> 点击“保存修改”
-```
-
-导出 DOCX：
-
-```text
-点击“导出 DOCX” -> 下载可编辑 Word 文档
-```
-
-导出 PDF：
-
-```text
-点击“导出 PDF” -> 浏览器打印面板 -> 选择“保存为 PDF”
-```
-
-当前阶段只内置 1 个稳定模板。未来可以扩展：
-
-- 更多内置模板
-- 可视化编辑 resume.json
-- 用户上传模板
-- `template_parser` + 视觉模型解析 PDF / Word / 图片模板
+- HTML：导出独立 HTML 文件，自动移除预览辅助提示。
+- PDF：使用 `html2canvas` + `jspdf` 将 A4 预览生成 PDF，支持多页切分。
 
 ## 常见问题
 
-### 1. 页面提示无法访问 localhost
+### 页面无法访问
 
-通常是开发服务没有启动。重新运行：
+确认开发服务已启动：
 
 ```bash
 npm run dev
@@ -442,90 +409,62 @@ npm run dev
 http://127.0.0.1:3000
 ```
 
-### 2. 提示 DeepSeek API Key 无效
+### 提示 API Key 无效
 
-检查 `.env.local`：
+检查 `.env.local` 中的 Key 和模式：
 
 ```bash
 DEEPSEEK_API_KEY=你的真实 Key
 AI_MODE=real
 ```
 
-修改后需要重启 `npm run dev`。
+修改环境变量后需要重启开发服务。
 
-### 3. 提示余额不足
+### 提示账户余额不足
 
-到 DeepSeek 控制台检查账户余额。开发调试时可以暂时开启：
+请到模型服务控制台检查余额。开发调试时可以临时切换到：
 
 ```bash
 AI_MODE=mock
 ```
 
-### 4. 提示 AI 返回格式异常
-
-可能是模型没有严格返回 JSON，或输入内容过长导致输出不完整。可以尝试：
-
-- 重新分析一次
-- 缩短简历或 JD
-- 检查模型是否支持 JSON 输出
-- 调整 `buildPrompt()` 中的提示词
-
-### 5. PDF / Word 解析不到文本
+### AI 返回格式异常
 
 可能原因：
 
-- PDF 是图片扫描件，没有可复制文本
-- Word 文件是旧版 `.doc`，当前只支持 `.docx`
-- 文件内容过少或格式异常
+- 模型没有严格返回 JSON。
+- 简历或 JD 太长，导致输出被截断。
+- 模型不支持 `response_format: { type: "json_object" }`。
 
-可以尝试导出为 `.docx` 或可复制文本的 PDF，或者直接粘贴简历文本。
+可以尝试缩短输入、重新分析，或更换支持 JSON 输出的模型。
 
-## 可继续完善的方向
+### PDF / Word 解析不到文本
 
-短期适合继续做：
+可能原因：
 
-- 更细粒度的项目经历改写
-- 支持用户选择某一段经历单独改写
-- 支持复制单条优化建议或单条改写结果
-- 支持旧版 Word `.doc` 解析
-- 支持图片扫描版 PDF 的 OCR 识别
-- 支持导出 Markdown / PDF / Word
-- 增加更多内置简历模板
-- 支持在线编辑 `resume.json`
+- PDF 是扫描图片，没有可复制文本。
+- Word 文件是旧版 `.doc`。
+- 文件内容过少或格式异常。
 
-中期可以扩展：
+可以尝试重新导出 `.docx`、使用可复制文本的 PDF，或直接粘贴简历正文。
 
-- 登录系统
-- 用户每日免费次数
-- 简历优化历史版本
-- 本地历史一键迁移到 Supabase
-- 面试题生成
-- 根据简历和 JD 生成自我介绍
+## 可继续扩展的方向
 
-长期可以发展为：
-
-- AI 求职助手
-- 多岗位简历定制
-- 简历投递建议
-- 面试准备 Agent
-- 面向 C 端求职者的轻量 SaaS 工具
+- 扫描版 PDF OCR 识别。
+- 更多内置简历模板。
+- 模板市场或用户上传模板。
+- 单条经历定向改写。
+- 根据简历和 JD 生成自我介绍、面试题和投递建议。
+- 登录系统、用户配额和多端同步。
+- 多岗位版本管理。
+- 面向 C 端求职者的轻量 SaaS 工具。
 
 ## 简历项目描述参考
 
-可以在简历中这样描述：
-
 ```text
-AI 简历优化助手 | Next.js / TypeScript / Tailwind CSS / DeepSeek API
-- 面向大学生秋招场景设计并实现 AI 简历优化工具，支持用户输入简历文本与目标岗位 JD，自动生成匹配度评分、问题诊断、缺失关键词和优化建议。
-- 封装 analyzeResume 方法对接 DeepSeek OpenAI-compatible API，通过 Prompt Engineering 约束大模型返回结构化 JSON，支持岗位关键词提取与简历改写对比展示。
-- 增加 AI 返回结果结构校验和错误分层处理，覆盖 API Key 错误、余额不足、网络失败、限流和 JSON 格式异常等情况，提升系统稳定性和用户体验。
-- 设计首页、输入页、结果页与精美简历生成页的完整产品流程，支持步骤式分析状态、优化版简历一键复制、A4 模板预览和浏览器导出 PDF，完成从需求分析到 AI 应用落地的闭环。
-```
-
-## 开发命令
-
-```bash
-npm run dev      # 启动开发服务
-npm run build    # 生产构建
-npm run lint     # 代码检查
+AI 简历优化助手 | Next.js / TypeScript / Tailwind CSS / DeepSeek API / Supabase
+- 面向大学生秋招和实习投递场景，设计并实现 AI 简历优化工具，支持简历上传解析、岗位 JD 输入、匹配度评分、缺失关键词诊断和优化版简历生成。
+- 封装 OpenAI-compatible Chat Completions 调用，通过 Prompt Engineering 约束模型返回结构化 JSON，并增加结果校验、错误分层和 Mock / 真实模型双模式，提升系统稳定性与演示效率。
+- 实现 Supabase 云端历史记录与 localStorage 本地兜底，支持历史记录查看、删除、本地历史迁移和从历史记录继续生成简历。
+- 构建精美简历生成模块，将优化文本转换为 resume.json，支持 3 套 A4 模板、在线编辑、头像裁剪、板块管理、HTML 导出和 PDF 导出，形成从 AI 分析到投递文件生成的完整闭环。
 ```
