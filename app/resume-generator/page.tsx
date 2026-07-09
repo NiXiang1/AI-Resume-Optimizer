@@ -8,8 +8,8 @@ import Template1 from "@/src/components/resume-templates/Template1";
 import Template2 from "@/src/components/resume-templates/Template2";
 import Template3 from "@/src/components/resume-templates/Template3";
 import { sampleResume } from "@/src/data/sampleResume";
-import { exportResumeDocx } from "@/src/lib/resume-export/exportDocx";
 import { exportResumeHtmlFromElement } from "@/src/lib/resume-export/exportHtml";
+import { exportResumePdfFromElement } from "@/src/lib/resume-export/exportPdf";
 import { getActiveResumeDraftId, getResumeDraftForCurrentSession, saveResumeDraft } from "@/src/lib/resume-storage/resumeDraft";
 import type {
   AwardItem,
@@ -74,6 +74,7 @@ export default function ResumeGeneratorPage() {
   const [mode, setMode] = useState<Mode>("preview");
   const [saved, setSaved] = useState(false);
   const [exportError, setExportError] = useState("");
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [draftReady, setDraftReady] = useState(false);
   const [draftId, setDraftId] = useState("");
   const [resumeData, setResumeData] = useState<ResumeData>(sampleResume);
@@ -100,14 +101,25 @@ export default function ResumeGeneratorPage() {
     window.setTimeout(() => setSaved(false), 1800);
   }
 
-  function exportPdf() {
+  async function exportPdf() {
     saveResumeJson();
-    window.print();
-  }
+    setExportError("");
+    setIsExportingPdf(true);
 
-  async function handleExportDocx() {
-    saveResumeJson();
-    await exportResumeDocx(resumeData, `${resumeData.basicInfo?.name || "resume"}.docx`);
+    try {
+      const previewElement = document.querySelector<HTMLElement>(".resume-generator-preview article");
+
+      if (!previewElement) {
+        setExportError("暂时没有找到可导出的简历预览，请稍后重试。");
+        return;
+      }
+
+      await exportResumePdfFromElement(previewElement, `${resumeData.basicInfo?.name || "resume"}.pdf`);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : "PDF 生成失败，请稍后重试。");
+    } finally {
+      setIsExportingPdf(false);
+    }
   }
 
   function handleExportHtml() {
@@ -133,7 +145,7 @@ export default function ResumeGeneratorPage() {
 
         <div className="resume-generator-heading">
           <h1>简历预览 / 编辑</h1>
-          <p>AI 生成 resume.json 后，可以先手动修改内容，再导出可编辑 DOCX 或最终投递 PDF。</p>
+          <p>AI 生成 resume.json 后，可以先手动修改内容，再导出 HTML 或最终投递 PDF。</p>
         </div>
 
         <section className="resume-generator-card">
@@ -171,17 +183,14 @@ export default function ResumeGeneratorPage() {
             <button type="button" onClick={saveResumeJson}>
               {saved ? "已保存" : "保存修改"}
             </button>
-            <button type="button" onClick={handleExportDocx}>
-              导出 DOCX
-            </button>
             <button type="button" onClick={handleExportHtml}>
               导出 HTML
             </button>
-            <button type="button" onClick={exportPdf} className="primary">
-              导出 PDF
+            <button type="button" onClick={exportPdf} className="primary" disabled={isExportingPdf}>
+              {isExportingPdf ? "正在生成 PDF..." : "导出 PDF"}
             </button>
           </div>
-          <p>DOCX 可在 Word 中继续编辑；HTML 可直接用浏览器打开或分享；PDF 用于最终投递。</p>
+          <p>HTML 可直接用浏览器打开或分享；PDF 用于最终投递。</p>
           <p className="resume-generator-save-state">编辑内容会自动保存到浏览器，下次进入会继续保留。</p>
           {exportError ? <p className="resume-generator-error">{exportError}</p> : null}
         </section>

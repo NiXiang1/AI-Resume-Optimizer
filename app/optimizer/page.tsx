@@ -31,6 +31,8 @@ const sampleJd = `岗位：AI 应用开发实习生
 const analysisSteps = ["解析简历", "分析岗位 JD", "匹配关键词", "生成优化建议", "生成优化版简历"];
 const stepSwitchInterval = 2400;
 const completionVisibleTime = 650;
+const maxResumeFileSize = 8 * 1024 * 1024;
+const supportedResumeExtensions = [".pdf", ".docx"];
 
 type AiMode = "mock" | "real";
 
@@ -40,6 +42,11 @@ type AnalyzeErrorState = {
   code?: string;
 };
 
+type UploadErrorState = {
+  message: string;
+  suggestion?: string;
+};
+
 export default function OptimizerPage() {
   const router = useRouter();
   const [resumeText, setResumeText] = useState("");
@@ -47,6 +54,7 @@ export default function OptimizerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState("");
+  const [uploadError, setUploadError] = useState<UploadErrorState | null>(null);
   const [activeStep, setActiveStep] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
@@ -150,6 +158,7 @@ export default function OptimizerPage() {
     setJobDescription(sampleJd);
     setError(null);
     setUploadedFileName("");
+    setUploadError(null);
     setActiveStep(0);
     setElapsedSeconds(0);
     setIsAnalysisComplete(false);
@@ -161,7 +170,16 @@ export default function OptimizerPage() {
   }
 
   async function handleResumeFileUpload(file: File) {
+    setUploadError(null);
     setError(null);
+
+    const validationError = validateResumeFile(file);
+    if (validationError) {
+      setUploadedFileName("");
+      setUploadError(validationError);
+      return;
+    }
+
     setIsExtracting(true);
     setUploadedFileName(file.name);
 
@@ -176,7 +194,7 @@ export default function OptimizerPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError({
+        setUploadError({
           message: data.message || "文件解析失败。",
           suggestion: data.suggestion
         });
@@ -186,7 +204,7 @@ export default function OptimizerPage() {
       setResumeText(data.text);
       setUploadedFileName(data.fileName);
     } catch (err) {
-      setError({
+      setUploadError({
         message: err instanceof Error ? err.message : "文件上传失败。",
         suggestion: "请检查本地服务是否正常运行，或直接粘贴简历文本。"
       });
@@ -261,6 +279,7 @@ export default function OptimizerPage() {
             fileName: uploadedFileName,
             isExtracting,
             disabled: isLoading,
+            error: uploadError,
             onFileSelect: handleResumeFileUpload
           }}
         />
@@ -495,6 +514,34 @@ function getLoadingButtonText(activeStep: number, isComplete: boolean) {
   return `正在${analysisSteps[activeStep]}`;
 }
 
+function validateResumeFile(file: File): UploadErrorState | null {
+  const normalizedName = file.name.toLowerCase();
+  const hasSupportedExtension = supportedResumeExtensions.some((extension) => normalizedName.endsWith(extension));
+
+  if (!hasSupportedExtension) {
+    return {
+      message: "暂时只支持 PDF 或 Word .docx 文件。",
+      suggestion: "如果你的简历是 .doc、图片或网页格式，可以先另存为 PDF，或直接粘贴文本。"
+    };
+  }
+
+  if (file.size > maxResumeFileSize) {
+    return {
+      message: "文件超过 8MB，暂时无法解析。",
+      suggestion: "可以压缩后重新上传，或把简历正文复制到下方输入框。"
+    };
+  }
+
+  if (file.size === 0) {
+    return {
+      message: "这个文件没有可读取内容。",
+      suggestion: "请重新选择有效的简历文件，或直接粘贴简历文本。"
+    };
+  }
+
+  return null;
+}
+
 function InputPanel({
   title,
   description,
@@ -512,6 +559,7 @@ function InputPanel({
     fileName: string;
     isExtracting: boolean;
     disabled: boolean;
+    error: UploadErrorState | null;
     onFileSelect: (file: File) => void;
   };
 }) {
@@ -541,16 +589,26 @@ function ResumeUpload({
     fileName: string;
     isExtracting: boolean;
     disabled: boolean;
+    error: UploadErrorState | null;
     onFileSelect: (file: File) => void;
   };
 }) {
   return (
-    <div className="mt-4 rounded-xl border border-dashed border-brand-100 bg-brand-50 p-4">
+    <div
+      className={`mt-4 rounded-xl border border-dashed p-4 transition ${
+        upload.error ? "border-red-200 bg-red-50" : "border-brand-100 bg-brand-50"
+      }`}
+    >
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
+        <div className="min-w-0">
           <div className="text-sm font-semibold text-ink">上传简历文件</div>
-          <p className="mt-1 text-sm leading-6 text-muted">支持 PDF 和 Word .docx，系统会自动解析文本并填入下方输入框。</p>
-          {upload.fileName ? (
+          <p className="mt-1 text-sm leading-6 text-muted">支持 PDF 和 Word .docx，8MB 以内。解析成功后会自动填入下方输入框。</p>
+          {upload.error ? (
+            <div className="mt-3 rounded-lg border border-red-200 bg-white px-3 py-2">
+              <p className="text-sm font-semibold text-red-800">{upload.error.message}</p>
+              {upload.error.suggestion ? <p className="mt-1 text-sm leading-6 text-red-700">{upload.error.suggestion}</p> : null}
+            </div>
+          ) : upload.fileName ? (
             <p className="mt-2 text-sm font-semibold text-brand-700">
               {upload.isExtracting ? "正在解析：" : "已读取："}
               {upload.fileName}

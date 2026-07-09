@@ -1,8 +1,16 @@
 export function exportResumeHtmlFromElement(element: HTMLElement, fileName = "resume.html") {
   const title = element.getAttribute("aria-label") || "个人简历";
+  const exportElement = element.cloneNode(true);
+
+  if (!(exportElement instanceof HTMLElement)) {
+    return;
+  }
+
+  removeExportOnlyUi(exportElement);
+
   const html = buildStandaloneHtml({
     title,
-    body: element.outerHTML,
+    body: exportElement.outerHTML,
     styles: collectDocumentStyles()
   });
 
@@ -13,6 +21,10 @@ export function exportResumeHtmlFromElement(element: HTMLElement, fileName = "re
   link.download = fileName.endsWith(".html") ? fileName : `${fileName}.html`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function removeExportOnlyUi(element: HTMLElement) {
+  element.querySelectorAll(".resume-overflow-hint, .a4-preview-warning").forEach((node) => node.remove());
 }
 
 function buildStandaloneHtml({ title, body, styles }: { title: string; body: string; styles: string }) {
@@ -58,7 +70,9 @@ function collectDocumentStyles() {
   return Array.from(document.styleSheets)
     .flatMap((sheet) => {
       try {
-        return Array.from(sheet.cssRules).map((rule) => rule.cssText);
+        return Array.from(sheet.cssRules)
+          .map((rule) => rule.cssText)
+          .filter((rule) => !rule.includes(".resume-overflow-hint") && !rule.includes(".a4-preview-warning"));
       } catch {
         return [];
       }
